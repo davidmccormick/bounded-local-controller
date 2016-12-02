@@ -11,7 +11,7 @@ pull:
 	-docker pull $(SERVER_NAME)/$(IMAGE_NAME):latest
 
 build: pull
-	docker build -t $(IMAGE_NAME) -f $(DOCKERFILE_PATH)/Dockerfile .
+	docker build -t $(IMAGE_NAME) -f Dockerfile .
 
 tag:
 	@echo "***Tagging $(IMAGE-NAME) $(VERSION)***"
