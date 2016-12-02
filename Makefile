@@ -1,5 +1,5 @@
 SERVER_NAME := packages.dns.ad.zopa.com:5002
-IMAGE_NAME := $(shell cat IMAGENAME)
+IMAGE_NAME := bounded-local-controller
 VERSION := $(shell cat VERSION)
 
 .PHONY : build publish
