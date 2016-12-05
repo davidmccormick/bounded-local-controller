@@ -1,5 +1,4 @@
-# bounded-local-controller
-A dockerized version of the bounded-local-controller for managing logging volumes in Kubernetes.
-After some experimentation it appears that the controller will need to be run as a systemd service on the kubelet nodes.
+# bounded-local and bounded local controller
+A kubernetes flexvolume for providing a means of logging out from kubernetes workloads to splunk.
 
-This repository can therefore be removed.
+see https://github.com/zopaUK/kubernetes-infrastructure/wiki/Logging-to-Splunk
