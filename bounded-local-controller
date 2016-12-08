@@ -233,6 +233,11 @@ while true; do
                 WHEN=$(cat ${VOL}/status | awk '{print $2}')
                 MNTPATH=$(cat ${VOL}/mountpath)
 
+		# always maintain logging mirror regarless of volume status (to give short lived pods a chance to log)
+                if [[ -f "${VOL}/mirror" ]]; then
+                	[[ $(cat "${VOL}/mirror") == "true" ]] && check_logging_mirror ${VOL}
+                fi
+
                 case ${STATUS} in
                   mounted) log "${SHORTVOL} ${STATUS} since $(date -d @${WHEN} +'%Y/%m/%d %H:%M:%S')"
 
@@ -274,7 +279,6 @@ while true; do
                   *)       log "ERROR - unknown status ${STATUS}!!!"
                            ;;
                 esac
-
         done
 
         # exit loop if RUN_LOOP_DELAY not set
