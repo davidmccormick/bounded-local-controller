@@ -130,7 +130,7 @@ configure_splunk_monitor() {
         log "Pod $PUID has meta data: ${META}"
 
         splunk_api POST "/services/data/inputs/monitor" "-d \"name=/applogs/${PUID}/\"" && \
-        splunk_api POST "/services/properties/inputs/monitor%3A%2F%2F%2Fapplogs%2F${PUID}%2F" "-d \"_meta=$(escape_quotes ${META})\"" && \
+        splunk_api POST "/services/properties/inputs/monitor%3A%2F%2F%2Fapplogs%2F${PUID}" "-d \"_meta=$(escape_quotes ${META})\"" && \
         splunk_api GET "/services/data/inputs/monitor/_reload"
         if [[ "$?" -eq 0 ]]; then
                 log "Created splunk monitor and updated with pod metadata .. ok"
