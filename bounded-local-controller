@@ -38,7 +38,7 @@ DEBUG="false"
 
 # log to syslog...
 log() {
-        echo $*
+        echo "$*"
 }
 
 # is the path a mount or not?
