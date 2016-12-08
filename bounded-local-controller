@@ -245,11 +245,6 @@ while true; do
                                    log "ERROR! ${SHORTVOL} is not correctly mounted to $MNTPATH, marking as failed!"
                                    TIMENOW=$(date +%s)
                                    echo "failed ${TIMENOW}" >${VOL}/status
-                           else
-                                if [[ -f "${VOL}/mirror" ]]; then
-                                        # check logging mirror if set to true
-                                        [[ $(cat "${VOL}/mirror") == "true" ]] && check_logging_mirror ${VOL}
-                                fi
                            fi
                            ;;
 
