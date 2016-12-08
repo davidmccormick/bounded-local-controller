@@ -220,7 +220,7 @@ remove_logging_mirror() {
 
 # main loop of program (will break out if RUN_LOOP_DELAY is not set)
 while true; do
-        log "Running bounded-volume cleanup for ${VOLUME_PATH}"
+        log "Running bounded-local-controller main loop over ${VOLUME_PATH}"
         for VOL in ${VOLUME_PATH}/*
         do
                 [[ "${VOL}" =~ \*$ ]] && break
