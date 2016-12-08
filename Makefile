@@ -16,7 +16,7 @@ build: pull
 tag:
 		@echo "***Tagging $(IMAGE-NAME) $(VERSION)***"
 		docker tag $(IMAGE_NAME) $(SERVER_NAME)/$(IMAGE_NAME):$(VERSION)
-		docker tag -f $(IMAGE_NAME) $(SERVER_NAME)/$(IMAGE_NAME):latest
+		docker tag $(IMAGE_NAME) $(SERVER_NAME)/$(IMAGE_NAME):latest
 
 push:
 		@echo "***Pushing $(IMAGE-NAME) $(VERSION)***"
