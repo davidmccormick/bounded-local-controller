@@ -58,7 +58,7 @@ splunk_api() {
   local RESULT=""
 
   local CALL="${CURL} --fail -k -s -u ${SPLUNKFWD_USER}:${SPLUNKFWD_PASS} ${SPLUNKFWD_URL}${PATH} -X ${VERB} ${EXTRAS}"
-  log "Calling $CALL"
+  [[ "${DEBUG}" == "true" ]] && log "Calling $CALL"
   if ! RESULT=$(eval $CALL 2>&1)
   then
     log "Splunk API CALL FAILED!"
