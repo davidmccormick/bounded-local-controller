@@ -109,7 +109,9 @@ get_splunk_metadata() {
                                 ELEMENT=$(echo ${ELEMENT} | sed -e 's/%20/ /g')
                                 if [[ "${ELEMENT}" =~ = ]]; then
                                         # structured key=value type fields become k8s_meta_key::value
-                                        [[ -z "${METALINE}" ]] && METALINE="k8s_${METADISPLAY}_${ELEMENT%%=*}::${ELEMENT##*=}" || METALINE+=" k8s_${METADISPLAY}_${ELEMENT%%=*}::${ELEMENT##*=}"
+					KEY=${ELEMENT%%=*}	
+					VALUE=${ELEMENT##*=}
+                                        [[ -z "${METALINE}" ]] && METALINE="k8s_${METADISPLAY}_${KEY,,}::${VALUE}" || METALINE+=" k8s_${METADISPLAY}_${KEY,,}::${VALUE}"
                                 else
                                         # simple value type fields become k8s_meta::value
                                         [[ -z "${METALINE}" ]] && METALINE="k8s_${METADISPLAY}::${ELEMENT}" || METALINE+=" k8s_${METADISPLAY}::${ELEMENT}"
