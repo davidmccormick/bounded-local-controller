@@ -154,7 +154,7 @@ remove_splunk_monitor() {
 
         log "Removing splunk monitor for ${PUID}"
 
-        splunk_api DELETE "/services/properties/inputs/monitor%3A%2F%2F%2Fapplogs%2F${PUID}"  && \
+        splunk_api DELETE "/services/data/inputs/monitor/%252Fapplogs%252F${PUID}"  && \
         splunk_api GET "/services/data/inputs/monitor/_reload"
         if [[ "$?" -eq 0 ]]; then
                 log "[CHANGE] Successfully removed splunk monitor .. ok"
