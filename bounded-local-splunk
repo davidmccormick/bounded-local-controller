@@ -114,7 +114,7 @@ check_splunk_monitor() {
 usage() {
 	echo "Usage: -"
 	echo "splunk-controller check pod-uid"
-	echo "splunk-controller configure pod-uid meta-data"
+	echo "splunk-controller add pod-uid [meta-data]"
 	echo "splunk-controller remove pod-uid"
 }
 
