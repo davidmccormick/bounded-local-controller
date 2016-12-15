@@ -1,13 +1,14 @@
 # bounded-local Kubernetes Flexvolume
 
-Here is an example implementation of flexvolume which creates a volume much like the kubernetes EmptyDir volume but with some interesting attributes that may assist cluster administrators and developers in the collection and forwarding of log files from their kubernetes cluster to a central logging platform, such as splunk or elasticsearch.
+Here is an example implementation of flexvolume which creates a volume much like the kubernetes _"EmptyDir"_ volume but with some interesting additional attributes that can assist cluster administrators and developers in the collection and forwarding of log files from their kubernetes cluster to their central logging platform.
 
 Features of bounded-local volumes: -
 
-* They are provisioned locally on the node hosting the kubelet (much like EmptyDir)
-* They are bounded by maximum size (therefore protecting the system from a undisciplied process logging excessively)
-* They can be optionally mounted to another location on the node for log collection to occur.
-* They can be left intact for a period of time after pod deletion in order for log collection to finish collecting the output.
+* They are provisioned locally on the node hosting the kubelet (much like EmptyDir).
+* They are bounded by maximum size (therefore protecting the system from a undisciplied process logging excessively).
+* They can be optionally mounted/mirrored to another location on the node for centralized log collection.
+* Only one log collection agent needs to run (e.g. splunk, fluentd etc.).
+* They can remain available for log collection after the application pod has been deleted or crashed.
 * They can collect meta-data from a pod and add it to logging events forwarded to the logging solution.
 
 ## Using a bounded-local volume
@@ -99,13 +100,89 @@ The controller script is configured by the following ENVIRONMENT variables: -
 
 In the example system service above, the variables are set to run the controller every 10 seconds and to enable the splunk backend for log collection.
 
-## Advanced Log Collection
+## Simple Log Collection
 
-Logs can collected simply by watching for all log files under /var/log-collection/*
+Logs can collected simply by watching all files and directories under /var/log-collection/*
 
 ### Pod metadata
 
-It is often more desirable to record meta-data along with our logs 
+It is often more desirable to record meta-data along with our log events, such as: -
 
+* Namespace
+* Pod Name
+* Pod labels
 
+To better manage configuring the log collection the bounded-local-controller can call out to its own plugins, and an example plugin for splunk has been included (bounded-local-splunk).  Presently, to collect meta data from the pod we must include it in a downward-api volume called 'podinfo' which is attached to the pod.  Here is the logging-test1 example again with the required downward-api volume: -
 
+    apiVersion: v1
+    kind: Pod
+    metadata:
+      name: logging-test1
+      annotations:
+         launched_as: part_of_voltest
+      labels:
+         k8s-app: random_logger
+         voltestpod: "true"
+    spec:
+       containers:
+       - name: logtest1
+         image: davidmccormick/random_log_generator
+         volumeMounts:
+         - name: logging
+           mountPath: /logs
+      volumes:
+      - name: logging
+        flexVolume:
+          driver: zopa.com/bounded-local
+           fsType: ext4
+           options:
+            size: "4096"
+            cleanupDelay: "60"
+            logCollectCopy: "true"
+      - name: podinfo
+        downwardAPI:
+          items:
+            - path: namespace
+              fieldRef:
+                fieldPath: metadata.namespace
+            - path: podname
+              fieldRef:
+                fieldPath: metadata.name
+            - path: labels
+              fieldRef:
+                fieldPath: metadata.labels
+
+The 'podinfo' volumes does not have to be mounted inside of the container - creating it is enough for the bounded-local-controller to find it and extract the meta-data.  Configure bounded-local-controller with the path to the splunk plugin, e.g. LOGGING_BACKEND_PLUGIN=/opt/bin/bounded-local-splunk
+
+The splunk plugin manages a separate watch for each pod (each pod logs to a unqiue directory below /var/log-collection), e.g.
+
+    # find /var/log-collection
+    /var/log-collection
+    /var/log-collection/98f5fddf-c2bf-11e6-bfd9-0800279a4bb5
+    /var/log-collection/98f5fddf-c2bf-11e6-bfd9-0800279a4bb5/random.log
+    /var/log-collection/98f5fddf-c2bf-11e6-bfd9-0800279a4bb5/lost+found
+    /var/log-collection/99007fc3-c2bf-11e6-bfd9-0800279a4bb5
+    /var/log-collection/99007fc3-c2bf-11e6-bfd9-0800279a4bb5/lost+found
+    /var/log-collection/99007fc3-c2bf-11e6-bfd9-0800279a4bb5/ApplicationXXX
+    /var/log-collection/99007fc3-c2bf-11e6-bfd9-0800279a4bb5/ApplicationXXX/star.log
+
+It uses the splunk REST API on the forwarder to uniquely watch each pod directory and add in the appropriate meta-data into inputs.conf (/opt/splunk/etc/system/local/inputs.conf), e.g.: -
+
+    [default]
+    host = w1
+    
+    [monitor:///applogs/99007fc3-c2bf-11e6-bfd9-0800279a4bb5]
+    _meta = k8s_namespace::default k8s_pod::logging-test1 k8s_label_k8s-app::"random_logger" k8s_label_voltestpod::"true" 
+    sourcetype = k8s-log
+    
+    [monitor:///applogs/98f5fddf-c2bf-11e6-bfd9-0800279a4bb5]
+    _meta = k8s_namespace::default k8s_pod::logging-test2 k8s_label_k8s-app::"nginx"
+    sourcetype = k8s-log
+
+Access to the splunk API is defined at the top of the bounded-local-splunk script: -
+
+    # Access to Splunk forwarder API
+    SPLUNKFWD_URL=https://localhost:8089
+    SPLUNKFWD_USER=admin
+    SPLUNKFWD_PASS=changeme
+    CURL="/usr/bin/curl"
