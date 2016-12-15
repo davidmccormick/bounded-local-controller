@@ -9,7 +9,7 @@ Features of bounded-local volumes: -
 * They can be optionally mounted/mirrored to another location on the node for centralized log collection.
 * Only one log collection agent needs to run (e.g. splunk, fluentd etc.).
 * They can remain available for log collection after the application pod has been deleted or crashed.
-* They can collect meta-data from a pod and add it to logging events forwarded to the logging solution.
+* They can collect meta-data from the pod and add it to logging events forwarded to the logging solution.
 
 ## Using a bounded-local volume
 
