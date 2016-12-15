@@ -42,7 +42,7 @@ To use the volume, add a FlexVolume mount to your pod like this: -
             logCollectCopy: "true"
 
 In the example above the random_log_generator image above writes a random log to /logs/random.log.  We have mounted a bounded-local 
-volume of 4Gib on /logs, this volume will also be mirrored to another location from log collection via the logCollectCopy option and we have set a delay of 60 seconds before the volume is cleaned up after it has been unmounted/removed from the pod.
+volume of 4Gib (4096Mib) on /logs, this volume will also be mirrored to another location from log collection via the logCollectCopy option and we have set a delay of 60 seconds before the volume is cleaned up after it has been unmounted/removed from the pod.
 
 The delayed clean-up and logCollectCopy features require that a separate controller process be run on the kubernetes node and, of course, a log collection daemon will also need to be run.  An example controller process is included as 'bounded-local-controller' (see Installing the Controller)
 
