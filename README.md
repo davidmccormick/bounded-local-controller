@@ -102,7 +102,7 @@ In the example system service above, the variables are set to run the controller
 
 ## Simple Log Collection
 
-Logs can collected simply by watching all files and directories under **/var/log-collection/\***
+Logs can collected simply by watching all files and directories under **/var/log-collection/***
 
 ### Pod metadata
 
