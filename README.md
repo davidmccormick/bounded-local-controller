@@ -5,9 +5,9 @@ Here is an example implementation of flexvolume which creates a volume much like
 Features of bounded-local volumes: -
 
 * They are provisioned locally on the node hosting the kubelet (much like EmptyDir).
-* They are bounded by maximum size (therefore protecting the system from a undisciplied process logging excessively).
-* They can be optionally mounted/mirrored to another location on the node for centralized log collection.
-* Only one log collection agent needs to run (e.g. splunk, fluentd etc.).
+* They are bounded by maximum size (therefore protecting the system from a undisciplied process writing excessively).
+* They can be optionally mounted/mirrored to another directory path for centralized log collection.
+* Only one log collection agent needs to run (e.g. splunk, fluentd etc.) per kubernetes node.
 * They can remain available for log collection after the application pod has been deleted or crashed.
 * They can collect meta-data from the pod and add it to logging events forwarded to the logging solution.
 
@@ -133,7 +133,7 @@ To better manage configuring the log collection the bounded-local-controller can
       volumes:
       - name: logging
         flexVolume:
-          driver: zopa.com/bounded-local
+          driver: kubernetes.io/bounded-local
            fsType: ext4
            options:
             size: "4096"
