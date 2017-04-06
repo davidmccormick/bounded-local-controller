@@ -83,7 +83,7 @@ ismounted() {
 mounted_volume() {
         local MNTPATH=$1
 
-        mount | awk '($3 == "'${MNTPATH}'") {print $1}'
+        mount | awk '($3 == "'${MNTPATH}'") {print $1}' | head -1
 }
 
 attach() {
