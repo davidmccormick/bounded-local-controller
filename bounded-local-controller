@@ -45,7 +45,7 @@ log() {
 ismounted() {
         local MNTPATH=$1
 
-        local MOUNT=`findmnt -n ${MNTPATH} 2>/dev/null | cut -d' ' -f1`
+        local MOUNT=`findmnt -n ${MNTPATH} 2>/dev/null | cut -d' ' -f1 | head -1`
         [[ "${MOUNT}" == "${MNTPATH}" ]]
         return $?
 }
