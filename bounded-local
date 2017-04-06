@@ -73,7 +73,7 @@ log() {
 ismounted() {
 	local MNTPATH=$1
 
-	local MOUNT=`findmnt -n ${MNTPATH} 2>/dev/null | cut -d' ' -f1`
+	local MOUNT=`findmnt -n ${MNTPATH} 2>/dev/null | cut -d' ' -f1 | head -1`
 	[[ "${MOUNT}" == "${MNTPATH}" ]]
 	return $?
 }
@@ -156,7 +156,7 @@ unmount() {
         local MNTPATH=$1
 
         if ! ismounted ${MNTPATH}; then
-                log "{\"status\": \"Success\"}"
+                log "{\"status\": \"Failed\", \"message\": \"Volume ${MNTPATH} is not mounted!\"}"
                 exit 0
         fi
 
