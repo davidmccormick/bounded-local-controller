@@ -88,10 +88,12 @@ mounted_volume() {
 
 attach() {
         log "{\"status\": \"Not supported\"}"
+        exit 0
 }
 
 detach() {
         log "{\"status\": \"Not supported\"}"
+        exit 0
 }
 
 domount() {
