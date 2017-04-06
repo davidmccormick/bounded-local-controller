@@ -25,7 +25,7 @@ DEFAULT_PATH=/var/lib/kubelet/bounded-local
 DEFAULT_LOGGING_PATH=/var/log-collection
 
 # Debug Logging
-DEBUG="false"
+DEBUG=${DEBUG:-false}
 
 # Logging backend plugin (splunk is only option at present)
 DEFAULT_LOGGING_BACKEND_PLUGIN=""

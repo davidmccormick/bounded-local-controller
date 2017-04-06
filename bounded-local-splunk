@@ -28,7 +28,7 @@ SPLUNKFWD_PASS=changeme
 CURL="/usr/bin/curl"
 
 # Debug Logging
-DEBUG="false"
+DEBUG=${DEBUG:-false}
 
 ###########################################################################
 
