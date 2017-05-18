@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="0.4"
+VERSION="0.7"
 
 # Copyright 2016 The Kubernetes Authors.
 #
@@ -53,176 +53,140 @@ DEFAULT_MIRROR="false"
 
 
 err() {
-        echo -ne $* 1>&2
+  echo -ne $* 1>&2
 }
 
 log() {
-        echo -ne $* >&1
-}
-
-attach() {
-	log "{\"status\": \"Success\", \"attached\": true, \"device\": \"/dev/bounded-local\"}"
-	exit 0
-}
-
-isattached() {
-	log "{\"status\": \"Success\", \"attached\": true}"
-	exit 0
-}
-
-waitforattach() {
-	log "{\"status\": \"Success\", \"device\": \"/dev/bounded-local\"}"
-	exit
-}
-
-detach() {
-	log "{\"status\": \"Success\"}"
-	exit 0
+  echo -ne $* >&1
 }
 
 ismounted() {
-	local MNTPATH=$1
+  local MNTPATH=$1
 
-	local MOUNT=`findmnt -n ${MNTPATH} 2>/dev/null | cut -d' ' -f1 | head -1`
-	[[ "${MOUNT}" == "${MNTPATH}" ]]
-	return $?
+  local MOUNT=`findmnt -n ${MNTPATH} 2>/dev/null | cut -d' ' -f1 | head -1`
+  [[ "${MOUNT}" == "${MNTPATH}" ]]
+  return $?
 }
 
 
 # given a mounted path, work out the bounded-local 'device'
 mounted_volume() {
-        local MNTPATH=$1
+  local MNTPATH=$1
 
-        mount | awk '($3 == "'${MNTPATH}'") {print $1}' | head -1
+  mount | awk '($3 == "'${MNTPATH}'") {print $1}' | head -1
 }
 
 domount() {
-        local MNTPATH=$1
-        # Mount device option is missing if attach returns not supported so json opts become argument 2.
-        local DEV=$2
-        local OPS=$3
+  local MNTPATH=$1
+  # Mount device option is missing if attach returns not supported so json opts become argument 2.
+  local DEV=$2
+  local OPS=$3
 
-        # Read mount options for size and clean up delay
-        local SIZE=$(echo $OPS | jq -r '.size')
-        local DELAY=$(echo $OPS | jq -r '.cleanupDelay')
-        local MIRROR=$(echo $OPS | jq -r '.logCollectCopy')
-        [[ "$SIZE" == "null" ]] && SIZE=${DEFAULT_SIZE}
-        [[ "$DELAY" == "null" ]] && DELAY=${DEFAULT_DELAY}
-        [[ "$MIRROR" == "null" ]] && MIRROR=${DEFAULT_MIRROR}
+  # Read mount options for size and clean up delay
+  local SIZE=$(echo $OPS | jq -r '.size')
+  local DELAY=$(echo $OPS | jq -r '.cleanupDelay')
+  local MIRROR=$(echo $OPS | jq -r '.logCollectCopy')
+  [[ "$SIZE" == "null" ]] && SIZE=${DEFAULT_SIZE}
+  [[ "$DELAY" == "null" ]] && DELAY=${DEFAULT_DELAY}
+  [[ "$MIRROR" == "null" ]] && MIRROR=${DEFAULT_MIRROR}
 
-        local VOLNAME="bounded-local-$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)"
-        # check for already mounted
-        if ismounted ${MNTPATH}; then
-                log "{\"status\": \"Success\"}"
-                exit 0
-        fi
+  local VOLNAME="bounded-local-$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)"
+  # check for already mounted
+  if ismounted ${MNTPATH}; then
+    log "{\"status\": \"Success\"}"
+    exit 0
+  fi
 
-        # create the sparse-file and mount it within the volume space
-        mkdir -p ${MNTPATH} &> /dev/null
-        mkdir -p ${VOLUME_PATH}/${VOLNAME}/vmount &> /dev/null
-        dd of=${VOLUME_PATH}/${VOLNAME}/sparse-volume bs=1024k seek=${SIZE} count=0 &> /dev/null
-        mkfs.ext4 ${VOLUME_PATH}/${VOLNAME}/sparse-volume  &> /dev/null
-	# mount the sparse-volume to the dedicated
-        mount ${VOLUME_PATH}/${VOLNAME}/sparse-volume ${VOLUME_PATH}/${VOLNAME}/vmount &> /dev/null
-        if [ $? -ne 0 ]; then
-                local TIMENOW=$(date +%s)
-                echo "failed ${TIMENOW}" >${VOLUME_PATH}/${VOLNAME}/status
-                err "{ \"status\": \"Failure\", \"message\": \"Failed to mount device ${DEV} at ${VOLUME_PATH}/${VOLNAME}/vmount"
-                exit 1
-        fi
-	# allow all uids access
-	chmod 0777 ${VOLUME_PATH}/${VOLNAME}/vmount
-	# bind mount the volume into the pod
-	mount -o rbind  ${VOLUME_PATH}/${VOLNAME}/vmount ${MNTPATH}
-        if [ $? -ne 0 ]; then
-                local TIMENOW=$(date +%s)
-                echo "failed ${TIMENOW}" >${VOLUME_PATH}/${VOLNAME}/status
-                err "{ \"status\": \"Failure\", \"message\": \"Failed to mount device ${DEV} into pod ${MNTPATH}"
-                exit 1
-        fi
+  # create the sparse-file and mount it within the volume space
+  mkdir -p ${MNTPATH} &> /dev/null
+  mkdir -p ${VOLUME_PATH}/${VOLNAME}/vmount &> /dev/null
+  dd of=${VOLUME_PATH}/${VOLNAME}/sparse-volume bs=1024k seek=${SIZE} count=0 &> /dev/null
+  mkfs.ext4 ${VOLUME_PATH}/${VOLNAME}/sparse-volume  &> /dev/null
+  # mount the sparse-volume to the dedicated
+  mount ${VOLUME_PATH}/${VOLNAME}/sparse-volume ${VOLUME_PATH}/${VOLNAME}/vmount &> /dev/null
+  if [ $? -ne 0 ]; then
+    local TIMENOW=$(date +%s)
+    echo "failed ${TIMENOW}" >${VOLUME_PATH}/${VOLNAME}/status
+    err "{ \"status\": \"Failure\", \"message\": \"Failed to mount device ${DEV} at ${VOLUME_PATH}/${VOLNAME}/vmount"
+    exit 1
+  fi
+  # allow all uids access
+  chmod 0777 ${VOLUME_PATH}/${VOLNAME}/vmount
+  # bind mount the volume into the pod
+  mount -o rbind  ${VOLUME_PATH}/${VOLNAME}/vmount ${MNTPATH}
+  if [ $? -ne 0 ]; then
+    local TIMENOW=$(date +%s)
+    echo "failed ${TIMENOW}" >${VOLUME_PATH}/${VOLNAME}/status
+    err "{ \"status\": \"Failure\", \"message\": \"Failed to mount device ${DEV} into pod ${MNTPATH}"
+    exit 1
+  fi
 
-        #write meta-data
-        local TIMENOW=$(date +%s)
-        echo "mounted ${TIMENOW}" >${VOLUME_PATH}/${VOLNAME}/status
-        echo "${MNTPATH}" >${VOLUME_PATH}/${VOLNAME}/mountpath
-        echo "${DELAY}" >${VOLUME_PATH}/${VOLNAME}/cleanup_delay
-        echo "${MIRROR}" >${VOLUME_PATH}/${VOLNAME}/mirror
+  #write meta-data
+  local TIMENOW=$(date +%s)
+  echo "mounted ${TIMENOW}" >${VOLUME_PATH}/${VOLNAME}/status
+  echo "${MNTPATH}" >${VOLUME_PATH}/${VOLNAME}/mountpath
+  echo "${DELAY}" >${VOLUME_PATH}/${VOLNAME}/cleanup_delay
+  echo "${MIRROR}" >${VOLUME_PATH}/${VOLNAME}/mirror
 
-        log "{\"status\": \"Success\"}"
-        exit 0
+  log "{\"status\": \"Success\"}"
+  exit 0
 }
 
 unmount() {
-        local MNTPATH=$1
+  local MNTPATH=$1
 
-        if ! ismounted ${MNTPATH}; then
-                log "{\"status\": \"Failed\", \"message\": \"Volume ${MNTPATH} is not mounted!\"}"
-                exit 0
-        fi
+  if ! ismounted ${MNTPATH}; then
+    log "{\"status\": \"Failed\", \"message\": \"Volume ${MNTPATH} is not mounted!\"}"
+    exit 0
+  fi
 
-        # do the unmount
-        local VOL=$(mounted_volume ${MNTPATH})
-        local VOLPATH=${VOL%%/sparse-volume}
-        umount -l ${MNTPATH} &> /dev/null
-        if [ $? -ne 0 ]; then
-                local TIMENOW=$(date +%s)
-                echo "failed ${TIMENOW}" >${VOLPATH}/status
-                err "{ \"status\": \"Failed\", \"message\": \"Failed to unmount volume ${VOL} at ${MNTPATH}\"}"
-                exit 1
-        fi
+  # do the unmount
+  local VOL=$(mounted_volume ${MNTPATH})
+  local VOLPATH=${VOL%%/sparse-volume}
+  umount -l ${MNTPATH} &> /dev/null
+  if [ $? -ne 0 ]; then
+    local TIMENOW=$(date +%s)
+    echo "failed ${TIMENOW}" >${VOLPATH}/status
+    err "{ \"status\": \"Failed\", \"message\": \"Failed to unmount volume ${VOL} at ${MNTPATH}\"}"
+    exit 1
+  fi
 
-        # Remove immediately if cleanup_delay is 0
-        # or just mark as unmounted for later clean up.
-        local CLEAN_DELAY=$(cat ${VOLPATH}/cleanup_delay)
-        if [[ "$CLEAN_DELAY" == "0" ]]; then
-		umount -l ${VOLPATH}/vmount &> /dev/null
-                rm -rf ${VOLPATH}
-        else
-                local TIMENOW=$(date +%s)
-                echo "unmounted ${TIMENOW}" >${VOLPATH}/status
-        fi
+  # Remove immediately if cleanup_delay is 0
+  # or just mark as unmounted for later clean up.
+  local CLEAN_DELAY=$(cat ${VOLPATH}/cleanup_delay)
+  if [[ "$CLEAN_DELAY" == "0" ]]; then
+    umount -l ${VOLPATH}/vmount &> /dev/null
+    rm -rf ${VOLPATH}
+  else
+    local TIMENOW=$(date +%s)
+    echo "unmounted ${TIMENOW}" >${VOLPATH}/status
+  fi
 
-        log "{\"status\": \"Success\"}"
-        exit 0
+  log "{\"status\": \"Success\"}"
+  exit 0
 }
 
 init() {
-        [[ ! -d "${VOLUME_PATH}" ]] && mkdir -p ${VOLUME_PATH}
-        log "{\"status\": \"Success\"}"
-        exit 0
+  [[ ! -d "${VOLUME_PATH}" ]] && mkdir -p ${VOLUME_PATH}
+  log "{\"status\": \"Success\"}"
+  exit 0
 }
 
 op=$1
 
-if [[ "$op" -ne "init" && $# -lt 2 ]]; then
-        usage
-fi
-
 shift
 
 case "$op" in
-        init)   init $*
-                ;;
-        mount)
-                domount $*
-                ;;
-        unmount)
-                unmount $*
-                ;;
-        attach)
-                attach $*
-                ;;
-        isattached)
-                isattached $*
-                ;;
-        waitforattach)
-                waitforattach $*
-                ;;
-        detach)
-                detach $*
-                ;;
-        *)
-               	err "{ \"status\": \"Not supported\" }"
-		exit 1
+  init)   init $*
+          ;;
+  mount|mountdevice)
+          domount $*
+          ;;
+  unmount|unmountdevice)
+          unmount $*
+          ;;
+  *)
+      err "{ \"status\": \"Not supported\" }"
+      exit 1
 esac
 
