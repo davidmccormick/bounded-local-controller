@@ -1,4 +1,4 @@
-SERVER_NAME := packages.dns.ad.zopa.com:5002
+SERVER_NAME := davidmccormick
 IMAGE_NAME := bounded-local-controller
 VERSION := $(shell cat VERSION)
 
