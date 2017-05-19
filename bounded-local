@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="0.7"
+VERSION="0.8"
 
 # Copyright 2016 The Kubernetes Authors.
 #
@@ -51,7 +51,6 @@ DEFAULT_SIZE=2048
 # collection
 DEFAULT_MIRROR="false"
 
-
 err() {
   echo -ne $* 1>&2
 }
@@ -61,11 +60,19 @@ log() {
 }
 
 ismounted() {
-  local MNTPATH=$1
+	local MNTPATH=$1
 
-  local MOUNT=`findmnt -n ${MNTPATH} 2>/dev/null | cut -d' ' -f1 | head -1`
-  [[ "${MOUNT}" == "${MNTPATH}" ]]
-  return $?
+	local MOUNT=`findmnt -n ${MNTPATH} 2>/dev/null | cut -d' ' -f1 | head -1`
+	[[ "${MOUNT}" == "${MNTPATH}" ]]
+	return $?
+}
+
+ismounted() {
+	local MNTPATH=$1
+
+	local MOUNT=`findmnt -n ${MNTPATH} 2>/dev/null | cut -d' ' -f1 | head -1`
+	[[ "${MOUNT}" == "${MNTPATH}" ]]
+	return $?
 }
 
 
@@ -102,7 +109,7 @@ domount() {
   mkdir -p ${VOLUME_PATH}/${VOLNAME}/vmount &> /dev/null
   dd of=${VOLUME_PATH}/${VOLNAME}/sparse-volume bs=1024k seek=${SIZE} count=0 &> /dev/null
   mkfs.ext4 ${VOLUME_PATH}/${VOLNAME}/sparse-volume  &> /dev/null
-  # mount the sparse-volume to the dedicated
+	# mount the sparse-volume to the dedicated
   mount ${VOLUME_PATH}/${VOLNAME}/sparse-volume ${VOLUME_PATH}/${VOLNAME}/vmount &> /dev/null
   if [ $? -ne 0 ]; then
     local TIMENOW=$(date +%s)
@@ -110,10 +117,10 @@ domount() {
     err "{ \"status\": \"Failure\", \"message\": \"Failed to mount device ${DEV} at ${VOLUME_PATH}/${VOLNAME}/vmount"
     exit 1
   fi
-  # allow all uids access
-  chmod 0777 ${VOLUME_PATH}/${VOLNAME}/vmount
-  # bind mount the volume into the pod
-  mount -o rbind  ${VOLUME_PATH}/${VOLNAME}/vmount ${MNTPATH}
+	# allow all uids access
+	chmod 0777 ${VOLUME_PATH}/${VOLNAME}/vmount
+	# bind mount the volume into the pod
+	mount -o rbind  ${VOLUME_PATH}/${VOLNAME}/vmount ${MNTPATH}
   if [ $? -ne 0 ]; then
     local TIMENOW=$(date +%s)
     echo "failed ${TIMENOW}" >${VOLUME_PATH}/${VOLNAME}/status
@@ -177,16 +184,17 @@ op=$1
 shift
 
 case "$op" in
-  init)   init $*
-          ;;
-  mount|mountdevice)
-          domount $*
-          ;;
-  unmount|unmountdevice)
-          unmount $*
-          ;;
+  init) 
+    init $*
+    ;;
+  mount)
+    domount $*
+    ;;
+  unmount)
+    unmount $*
+    ;;
   *)
-      err "{ \"status\": \"Not supported\" }"
-      exit 1
+    log "{ \"status\": \"Not supported\" }"
+	  exit 0
 esac
 
